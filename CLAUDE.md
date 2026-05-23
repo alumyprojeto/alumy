@@ -1,15 +1,20 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Este arquivo fornece orientações para o Claude Code (claude.ai/code) ao trabalhar com o código deste repositório.
 
-## Repository status
+## Status do repositório
 
-This repository currently contains no source code, configuration, or documentation beyond this file. There is nothing to build, test, lint, or run yet, and no architecture to describe.
+Este repositório atualmente não contém código-fonte, configuração ou documentação além deste arquivo. Ainda não há nada para construir, testar, lintar ou executar, e nenhuma arquitetura a ser descrita.
 
-Once initial code is added, replace this section with:
+Assim que o código inicial for adicionado, substitua esta seção por:
 
-- **Commands** — how to install dependencies, run the dev server, build, test (including running a single test), and lint.
-- **Architecture** — the big-picture structure that requires reading multiple files to understand (entry points, module boundaries, data flow, key abstractions).
-- **Conventions** — anything non-obvious a contributor needs to know that isn't already captured by tooling (codegen steps, env setup, deployment quirks).
+- **Comandos** — como instalar dependências, executar o servidor de desenvolvimento, construir, testar (incluindo a execução de um único teste) e lintar.
+- **Arquitetura** — a estrutura geral que exige a leitura de múltiplos arquivos para ser compreendida (pontos de entrada, limites de módulos, fluxo de dados, abstrações principais).
+- **Convenções** — qualquer coisa não óbvia que um contribuidor precise saber e que ainda não esteja capturada pelo ferramental (etapas de geração de código, configuração de ambiente, peculiaridades de implantação).
 
-Re-run `/init` after the first substantive commit so this file reflects the actual codebase.
+Execute `/init` novamente após o primeiro commit substantivo para que este arquivo reflita o código real.
+
+## Idioma
+
+- Responda sempre em português (Brasil).
+- Gere todos os títulos de conversa, mensagens de commit e descrições de PR em português (Brasil).
