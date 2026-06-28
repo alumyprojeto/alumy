@@ -51,7 +51,7 @@ async function main() {
     data: { etapaObraId: etapaInst.id, usuarioId: loginOk!.id, tipo: "status", texto: "Status → Em andamento. Equipe na obra." },
   });
   await prisma.foto.create({
-    data: { caminho: "/uploads/teste.jpg", etapaObraId: etapaInst.id, usuarioId: loginOk!.id },
+    data: { dados: "data:image/png;base64,iVBORw0KGgo=", etapaObraId: etapaInst.id, usuarioId: loginOk!.id },
   });
   const pend = await prisma.pendencia.create({
     data: { obraId: obra.id, etapaObraId: etapaInst.id, descricao: "Faltou 1 vidro temperado 8mm", criadoPorId: loginOk!.id },

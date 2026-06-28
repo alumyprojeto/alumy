@@ -2,8 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
 import { prisma } from "@/lib/prisma";
 import { exigirSessao, exigirAdmin } from "@/lib/sessao";
 import { podeVerSetor } from "@/lib/auth";
@@ -79,21 +77,19 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
     atualizacaoId = at.id;
   }
 
-  // Upload de fotos (campo "fotos", múltiplas)
+  // Upload de fotos (campo "fotos", múltiplas) — guardadas no banco como data URL base64,
+  // assim funciona em qualquer hospedagem (inclusive serverless, sem disco persistente).
   const fotos = formData.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
   if (fotos.length) {
-    const dir = path.join(process.cwd(), "public", "uploads");
-    await mkdir(dir, { recursive: true });
     for (const file of fotos) {
-      const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
-      const nome = `obra${etapa.obraId}-et${etapaObraId}-${Date.now()}-${Math.random()
-        .toString(36)
-        .slice(2, 8)}.${ext}`;
-      const bytes = Buffer.from(await file.arrayBuffer());
-      await writeFile(path.join(dir, nome), bytes);
+      // limita a ~6MB por foto para não estourar o banco
+      if (file.size > 6 * 1024 * 1024) continue;
+      const tipo = file.type || "image/jpeg";
+      const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
+      const dataUrl = `data:${tipo};base64,${base64}`;
       await prisma.foto.create({
         data: {
-          caminho: `/uploads/${nome}`,
+          dados: dataUrl,
           etapaObraId,
           atualizacaoId: atualizacaoId ?? undefined,
           usuarioId: sessao.id,

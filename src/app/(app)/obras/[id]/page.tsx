@@ -168,9 +168,9 @@ export default async function ObraDetalhePage({
                       <div className="flex gap-2 mt-2 flex-wrap">
                         {e.fotos.map((f) => (
                           // eslint-disable-next-line @next/next/no-img-element
-                          <a key={f.id} href={f.caminho} target="_blank" rel="noreferrer">
+                          <a key={f.id} href={f.dados} target="_blank" rel="noreferrer">
                             <img
-                              src={f.caminho}
+                              src={f.dados}
                               alt="Foto da etapa"
                               className="h-16 w-16 rounded-lg object-cover border border-navy-100"
                             />

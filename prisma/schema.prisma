@@ -117,7 +117,7 @@ model Atualizacao {
 
 model Foto {
   id            Int          @id @default(autoincrement())
-  caminho       String // /uploads/xxxx.jpg
+  dados         String // imagem em data URL (base64) — guardada no banco p/ funcionar em qualquer hospedagem
   etapaObra     EtapaObra    @relation(fields: [etapaObraId], references: [id], onDelete: Cascade)
   etapaObraId   Int
   atualizacao   Atualizacao? @relation(fields: [atualizacaoId], references: [id], onDelete: SetNull)
