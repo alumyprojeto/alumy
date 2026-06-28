@@ -1,0 +1,101 @@
+# Alumy PCP — Acompanhamento de Obras
+
+Aplicativo web (e mobile, pelo navegador do celular) para acompanhar o ciclo de vida das obras da **Alumy Esquadrias** — da chegada do lead ao arquivamento. Substitui a planilha de PCP e os grupos de WhatsApp por um sistema com login, dashboard por setor e atualização de status, **fotos** e **pendências** direto do campo.
+
+> Construído a partir do mapeamento de processos da Alumy (33 etapas, 7 setores). Veja `BLUEPRINT.md` para o detalhamento das decisões.
+
+## Funcionalidades (MVP)
+
+- 🔐 **Login** por usuário e senha. A gestão cria os acessos e define o setor de cada pessoa.
+- 🧭 **Painel por setor** — cada funcionário vê a fila de etapas que dependem dele; a gestão vê tudo.
+- 🏗️ **Obras** — cada obra gera automaticamente as **33 etapas** do processo, com prazos, dependências e marcação de gargalos.
+- 📱 **Atualização em campo** — mudar status, escrever comentário, **tirar/anexar fotos** e **registrar pendências** (otimizado para celular em Instalação e Almoxarifado).
+- ⚠️ **Pendências** centralizadas por obra, com resolução.
+- 👥 **Administração de usuários** (gestão): criar, definir setores, ativar/desativar.
+
+## Setores
+
+Gestão/PCP (admin) · Vendas · Financeiro · Almoxarifado · Compras · Produção · Instalação.
+
+## Stack
+
+- **Next.js 14** (App Router) + **TypeScript**
+- **Prisma** + **SQLite** (MVP). Trocável para **PostgreSQL** em produção.
+- Autenticação própria (bcrypt + JWT em cookie httpOnly)
+- **Tailwind CSS** (design system "Painel da Tata": creme + navy + púrpura)
+
+## Como rodar localmente
+
+Pré-requisitos: Node 18+ e npm.
+
+```bash
+# 1. Instalar dependências
+npm install
+
+# 2. Configurar variáveis de ambiente
+cp .env.example .env
+# (edite AUTH_SECRET com um valor aleatório longo)
+
+# 3. Criar o banco e popular com setores, 33 etapas e equipe inicial
+npm run db:push
+npm run db:seed
+
+# 4. Subir em modo desenvolvimento
+npm run dev
+# acesse http://localhost:3000
+```
+
+### Acessos iniciais (criados pelo seed)
+
+Senha padrão de todos: **`alumy123`** (troque depois). Usuários: `nayla` e `bianca` (gestão/admin), `thais` (vendas), `daiana` (financeiro), `eduardo` e `kauana` (almoxarifado), `taina` (compras), `producao`, `instalacao`.
+
+> Entre como **`nayla`** para criar obras e gerenciar usuários.
+
+## Build de produção
+
+```bash
+npm run build
+npm run start
+```
+
+## Trocar para PostgreSQL (produção)
+
+1. Em `prisma/schema.prisma`, mude `provider = "sqlite"` para `provider = "postgresql"`.
+2. No `.env`, aponte `DATABASE_URL` para o seu Postgres:
+   `DATABASE_URL="postgresql://usuario:senha@host:5432/alumy_pcp"`
+3. Rode `npm run db:push && npm run db:seed`.
+
+Recomendado para multi-usuário/produção (SQLite não aguenta concorrência).
+
+## Scripts
+
+| Comando | O que faz |
+|---|---|
+| `npm run dev` | Servidor de desenvolvimento |
+| `npm run build` | Build de produção (gera o cliente Prisma + Next) |
+| `npm run start` | Sobe o build de produção |
+| `npm run db:push` | Cria/atualiza as tabelas a partir do schema |
+| `npm run db:seed` | Popula setores, 33 etapas e equipe inicial |
+| `npm run db:reset` | Recria o banco do zero e popula |
+
+## Estrutura
+
+```
+prisma/
+  schema.prisma     # modelo de dados
+  seed.ts           # setores + 33 etapas + equipe
+src/
+  lib/              # prisma, auth, sessão, setores, obras
+  app/
+    login/          # tela de login
+    (app)/
+      painel/       # dashboard por setor
+      obras/        # lista, nova, detalhe (timeline) + atualização de etapa
+      admin/        # gestão de usuários
+scripts/
+  smoke_test.ts     # teste da lógica (login, obra→33 etapas, foto, pendência)
+```
+
+## Próximos passos (fora do MVP)
+
+Automações sugeridas no mapeamento (Fase 5 do BLUEPRINT): follow-up de propostas, aviso de instalação ao cliente com antecedência (WhatsApp/Evolution), termo de entrega assinado, NPS automático, alertas de gargalo (lead time de perfis/vidros). Deploy em VPS com domínio próprio.

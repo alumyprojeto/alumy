@@ -1,0 +1,140 @@
+// Schema do banco do App Alumy PCP.
+// MVP em SQLite. Para produção, troque provider para "postgresql" e ajuste DATABASE_URL.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ----- Usuários e setores -----
+
+model Setor {
+  id       Int           @id @default(autoincrement())
+  codigo   String        @unique // gestao, vendas, financeiro, almoxarifado, compras, producao, instalacao
+  nome     String
+  ordem    Int           @default(0)
+  mobile   Boolean       @default(false) // setor que usa celular em campo
+  usuarios UsuarioSetor[]
+  etapas   EtapaTemplate[]
+}
+
+model Usuario {
+  id           Int            @id @default(autoincrement())
+  username     String         @unique
+  nome         String
+  senhaHash    String
+  isAdmin      Boolean        @default(false)
+  ativo        Boolean        @default(true)
+  criadoEm     DateTime       @default(now())
+  setores      UsuarioSetor[]
+  obrasCriadas Obra[]         @relation("ObraCriadaPor")
+  etapas       EtapaObra[]    @relation("EtapaResponsavel")
+  atualizacoes Atualizacao[]
+  fotos        Foto[]
+  pendencias   Pendencia[]    @relation("PendenciaCriadaPor")
+}
+
+model UsuarioSetor {
+  usuario   Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  usuarioId Int
+  setor     Setor   @relation(fields: [setorId], references: [id], onDelete: Cascade)
+  setorId   Int
+
+  @@id([usuarioId, setorId])
+}
+
+// ----- Catálogo das 33 etapas -----
+
+model EtapaTemplate {
+  id           Int         @id @default(autoincrement())
+  numero       Int         @unique
+  codigo       String      @unique
+  nome         String
+  areaOriginal String // rótulo da planilha: Pré-venda, Contrato, ...
+  setor        Setor       @relation(fields: [setorId], references: [id])
+  setorId      Int
+  prazoMin     Int         @default(0)
+  prazoMax     Int         @default(0)
+  dependencias String      @default("")
+  observacoes  String      @default("")
+  isGargalo    Boolean     @default(false)
+  etapasObra   EtapaObra[]
+}
+
+// ----- Obras e seu andamento -----
+
+model Obra {
+  id             Int         @id @default(autoincrement())
+  codigo         String      @unique // OBRA-0001
+  clienteNome    String
+  clienteContato String      @default("")
+  endereco       String      @default("")
+  descricao      String      @default("")
+  status         String      @default("em_andamento") // em_andamento, concluida, cancelada
+  criadoEm       DateTime    @default(now())
+  criadoPor      Usuario     @relation("ObraCriadaPor", fields: [criadoPorId], references: [id])
+  criadoPorId    Int
+  etapas         EtapaObra[]
+  pendencias     Pendencia[]
+}
+
+model EtapaObra {
+  id              Int           @id @default(autoincrement())
+  obra            Obra          @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  obraId          Int
+  template        EtapaTemplate @relation(fields: [templateId], references: [id])
+  templateId      Int
+  status          String        @default("pendente") // pendente, em_andamento, concluida, travada
+  responsavel     Usuario?      @relation("EtapaResponsavel", fields: [responsavelId], references: [id])
+  responsavelId   Int?
+  iniciadoEm      DateTime?
+  concluidoEm     DateTime?
+  observacao      String        @default("")
+  atualizacoes    Atualizacao[]
+  fotos           Foto[]
+  pendencias      Pendencia[]
+
+  @@unique([obraId, templateId])
+}
+
+model Atualizacao {
+  id          Int       @id @default(autoincrement())
+  etapaObra   EtapaObra @relation(fields: [etapaObraId], references: [id], onDelete: Cascade)
+  etapaObraId Int
+  usuario     Usuario   @relation(fields: [usuarioId], references: [id])
+  usuarioId   Int
+  tipo        String    @default("comentario") // comentario, status, pendencia
+  texto       String
+  criadoEm    DateTime  @default(now())
+  fotos       Foto[]
+}
+
+model Foto {
+  id            Int          @id @default(autoincrement())
+  caminho       String // /uploads/xxxx.jpg
+  etapaObra     EtapaObra    @relation(fields: [etapaObraId], references: [id], onDelete: Cascade)
+  etapaObraId   Int
+  atualizacao   Atualizacao? @relation(fields: [atualizacaoId], references: [id], onDelete: SetNull)
+  atualizacaoId Int?
+  usuario       Usuario      @relation(fields: [usuarioId], references: [id])
+  usuarioId     Int
+  criadoEm      DateTime     @default(now())
+}
+
+model Pendencia {
+  id          Int        @id @default(autoincrement())
+  obra        Obra       @relation(fields: [obraId], references: [id], onDelete: Cascade)
+  obraId      Int
+  etapaObra   EtapaObra? @relation(fields: [etapaObraId], references: [id], onDelete: SetNull)
+  etapaObraId Int?
+  descricao   String
+  status      String     @default("aberta") // aberta, resolvida
+  criadoPor   Usuario    @relation("PendenciaCriadaPor", fields: [criadoPorId], references: [id])
+  criadoPorId Int
+  criadoEm    DateTime   @default(now())
+  resolvidoEm DateTime?
+}
