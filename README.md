@@ -24,26 +24,52 @@ Gestão/PCP (admin) · Vendas · Financeiro · Almoxarifado · Compras · Produ�
 - Autenticação própria (bcrypt + JWT em cookie httpOnly)
 - **Tailwind CSS** (design system "Painel da Tata": creme + navy + púrpura)
 
-## Como rodar localmente
+## Como rodar no seu computador (passo a passo)
 
-Pré-requisitos: Node 18+ e npm.
+> Funciona em **Windows**, Mac e Linux. Não precisa saber programar — é só seguir na ordem.
+
+### Passo 0 — Instalar o Node (uma vez só)
+
+Se ainda não tem, baixe e instale o **Node.js LTS** em <https://nodejs.org> (botão "LTS").
+Depois feche e reabra o terminal.
+
+- **Windows:** abra o **Prompt de Comando** ou **PowerShell** (menu Iniciar → digite "cmd").
+- **Mac/Linux:** abra o **Terminal**.
+
+Para conferir se instalou, digite e dê Enter:
+```bash
+node --version
+```
+Deve aparecer algo como `v20.x` ou `v22.x`.
+
+### Passo 1 — Entrar na pasta do projeto
 
 ```bash
-# 1. Instalar dependências
-npm install
-
-# 2. Configurar variáveis de ambiente
-cp .env.example .env
-# (edite AUTH_SECRET com um valor aleatório longo)
-
-# 3. Criar o banco e popular com setores, 33 etapas e equipe inicial
-npm run db:push
-npm run db:seed
-
-# 4. Subir em modo desenvolvimento
-npm run dev
-# acesse http://localhost:3000
+cd caminho/para/alumy
 ```
+(no Windows, ex.: `cd "G:\Meu Drive\...\alumy"`)
+
+### Passo 2 — Instalar e preparar (dois comandos)
+
+```bash
+npm install
+npm run setup
+```
+
+- `npm install` baixa o que o app precisa (demora 1–2 min na primeira vez).
+- `npm run setup` cria o arquivo de configuração, monta o banco de dados e cadastra
+  os 7 setores, as 33 etapas e a equipe inicial — **tudo automático**.
+
+### Passo 3 — Ligar o app
+
+```bash
+npm run dev
+```
+Depois abra o navegador em **<http://localhost:3000>** e entre com o usuário **`nayla`**.
+
+> Para acessar **pelo celular** na mesma rede Wi-Fi: o terminal mostra um endereço
+> "Network" (ex.: `http://192.168.0.10:3000`) — abra esse endereço no navegador do celular.
+> Para parar o app, volte ao terminal e aperte `Ctrl + C`.
 
 ### Acessos iniciais (criados pelo seed)
 
