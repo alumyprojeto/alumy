@@ -28,27 +28,28 @@ export default function NovaObraPage() {
 
       <form action={formAction} className="card p-6 space-y-4">
         <div>
-          <label className="label" htmlFor="clienteNome">
-            Nome do cliente *
-          </label>
+          <label className="label" htmlFor="clienteNome">Nome do cliente *</label>
           <input id="clienteNome" name="clienteNome" className="input" required placeholder="Ex.: João da Silva" />
         </div>
         <div>
-          <label className="label" htmlFor="clienteContato">
-            Contato (WhatsApp / telefone)
-          </label>
+          <label className="label" htmlFor="clienteContato">Contato (WhatsApp / telefone)</label>
           <input id="clienteContato" name="clienteContato" className="input" placeholder="(00) 00000-0000" />
         </div>
         <div>
-          <label className="label" htmlFor="endereco">
-            Endereço da obra
-          </label>
+          <label className="label" htmlFor="endereco">Endereço da obra</label>
           <input id="endereco" name="endereco" className="input" placeholder="Rua, nº, bairro, cidade" />
         </div>
         <div>
-          <label className="label" htmlFor="descricao">
-            Descrição / observações
+          <label className="label" htmlFor="dataInstalacao">
+            Data prevista de instalação
           </label>
+          <input id="dataInstalacao" name="dataInstalacao" type="date" className="input" />
+          <p className="text-xs text-navy-400 mt-1">
+            Usada para calcular semáforo de prazo e marcos D-40 a D+7.
+          </p>
+        </div>
+        <div>
+          <label className="label" htmlFor="descricao">Descrição / observações</label>
           <textarea
             id="descricao"
             name="descricao"
@@ -65,9 +66,7 @@ export default function NovaObraPage() {
 
         <div className="flex gap-2">
           <Botao />
-          <Link href="/obras" className="btn-ghost">
-            Cancelar
-          </Link>
+          <Link href="/obras" className="btn-ghost">Cancelar</Link>
         </div>
       </form>
     </div>

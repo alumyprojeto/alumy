@@ -13,11 +13,14 @@ export async function criarObraAction(_prev: unknown, formData: FormData) {
   const clienteNome = String(formData.get("clienteNome") || "").trim();
   if (!clienteNome) return { erro: "Informe o nome do cliente." };
 
+  const dataInstalacaoStr = String(formData.get("dataInstalacao") || "").trim();
+
   const obra = await criarObraComEtapas({
     clienteNome,
     clienteContato: String(formData.get("clienteContato") || "").trim(),
     endereco: String(formData.get("endereco") || "").trim(),
     descricao: String(formData.get("descricao") || "").trim(),
+    dataInstalacao: dataInstalacaoStr ? new Date(dataInstalacaoStr) : undefined,
     criadoPorId: sessao.id,
   });
 
@@ -37,7 +40,6 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
   });
   if (!etapa) return { erro: "Etapa não encontrada." };
 
-  // Permissão: só admin ou quem é do setor da etapa.
   if (!podeVerSetor(sessao, etapa.template.setor.codigo)) {
     return { erro: "Você não tem acesso a este setor." };
   }
@@ -46,7 +48,6 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
   const comentario = String(formData.get("comentario") || "").trim();
   const pendenciaTexto = String(formData.get("pendencia") || "").trim();
 
-  // Atualiza status + marca datas
   const data: {
     status: string;
     iniciadoEm?: Date;
@@ -60,7 +61,6 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
 
   await prisma.etapaObra.update({ where: { id: etapaObraId }, data });
 
-  // Registra atualização (timeline) se houve mudança de status ou comentário
   const houveStatus = novoStatus !== etapa.status;
   let atualizacaoId: number | null = null;
   if (houveStatus || comentario) {
@@ -77,12 +77,9 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
     atualizacaoId = at.id;
   }
 
-  // Upload de fotos (campo "fotos", múltiplas) — guardadas no banco como data URL base64,
-  // assim funciona em qualquer hospedagem (inclusive serverless, sem disco persistente).
   const fotos = formData.getAll("fotos").filter((f): f is File => f instanceof File && f.size > 0);
   if (fotos.length) {
     for (const file of fotos) {
-      // limita a ~6MB por foto para não estourar o banco
       if (file.size > 6 * 1024 * 1024) continue;
       const tipo = file.type || "image/jpeg";
       const base64 = Buffer.from(await file.arrayBuffer()).toString("base64");
@@ -98,7 +95,6 @@ export async function atualizarEtapaAction(_prev: unknown, formData: FormData) {
     }
   }
 
-  // Registra pendência (opcional)
   if (pendenciaTexto) {
     await prisma.pendencia.create({
       data: {

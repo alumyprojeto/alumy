@@ -4,6 +4,7 @@ import { exigirSessao } from "@/lib/sessao";
 import { prisma } from "@/lib/prisma";
 import { podeVerSetor } from "@/lib/auth";
 import { setorMeta } from "@/lib/setores";
+import { calcularAlerta, ALERTA_META, calcularMarcos, faseAtual } from "@/lib/semaforo";
 import { SetorBadge, StatusBadge, GargaloBadge } from "../../_components/Badges";
 import { EtapaForm } from "./EtapaForm";
 import { resolverPendenciaAction } from "../actions";
@@ -13,11 +14,12 @@ export const dynamic = "force-dynamic";
 function fmtData(d: Date | null) {
   if (!d) return "";
   return new Date(d).toLocaleDateString("pt-BR", {
-    day: "2-digit",
-    month: "2-digit",
-    hour: "2-digit",
-    minute: "2-digit",
+    day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit",
   });
+}
+
+function fmtDia(d: Date) {
+  return new Date(d).toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
 export default async function ObraDetalhePage({
@@ -57,6 +59,10 @@ export default async function ObraDetalhePage({
   const concluidas = obra.etapas.filter((e) => e.status === "concluida").length;
   const pct = total ? Math.round((concluidas / total) * 100) : 0;
   const pendenciasAbertas = obra.pendencias.filter((p) => p.status === "aberta");
+  const alerta = calcularAlerta(obra.dataInstalacao, pct);
+  const am = ALERTA_META[alerta];
+  const fase = faseAtual(pct, obra.dataInstalacao);
+  const marcos = obra.dataInstalacao ? calcularMarcos(new Date(obra.dataInstalacao)) : null;
 
   return (
     <div className="space-y-6">
@@ -68,23 +74,49 @@ export default async function ObraDetalhePage({
           <div>
             <span className="font-mono text-xs text-navy-400">{obra.codigo}</span>
             <h1 className="font-serif text-3xl font-bold text-navy-800">{obra.clienteNome}</h1>
+            <div className="flex flex-wrap gap-2 mt-1.5">
+              <span className={`chip border text-xs ${am.bg} ${am.cor}`}>{am.emoji} {am.rotulo}</span>
+              <span className="chip bg-navy-50 text-navy-600 border-navy-100 text-xs">{fase}</span>
+            </div>
             <div className="text-sm text-navy-600 mt-1 space-y-0.5">
               {obra.endereco ? <p>📍 {obra.endereco}</p> : null}
               {obra.clienteContato ? <p>📞 {obra.clienteContato}</p> : null}
+              {obra.dataInstalacao ? (
+                <p>📅 Instalação prevista: <strong>{new Date(obra.dataInstalacao).toLocaleDateString("pt-BR")}</strong></p>
+              ) : null}
               {obra.descricao ? <p className="text-navy-700">{obra.descricao}</p> : null}
             </div>
           </div>
           <div className="text-right shrink-0">
             <div className="text-3xl font-bold text-purpura-600">{pct}%</div>
-            <div className="text-xs text-navy-400">
-              {concluidas}/{total} etapas
-            </div>
+            <div className="text-xs text-navy-400">{concluidas}/{total} etapas</div>
           </div>
         </div>
         <div className="mt-3 h-2.5 rounded-full bg-navy-50 overflow-hidden">
           <div className="h-full bg-purpura-500 rounded-full" style={{ width: `${pct}%` }} />
         </div>
       </div>
+
+      {/* Marcos D- */}
+      {marcos ? (
+        <section className="card p-4">
+          <h2 className="font-semibold text-navy-800 mb-3">📆 Calendário de marcos</h2>
+          <div className="flex gap-2 overflow-x-auto pb-1">
+            {marcos.map((m) => (
+              <div
+                key={m.rotulo}
+                className={`shrink-0 rounded-lg border px-3 py-2 text-center text-xs min-w-[90px] ${
+                  m.passado ? "bg-navy-50 border-navy-100 text-navy-400" : "bg-purpura-50 border-purpura-200 text-purpura-700"
+                }`}
+              >
+                <p className="font-semibold">{fmtDia(m.data)}</p>
+                <p className="mt-0.5 leading-tight">{m.rotulo}</p>
+                {m.passado ? <p className="mt-0.5 text-emerald-600">✓</p> : null}
+              </div>
+            ))}
+          </div>
+        </section>
+      ) : null}
 
       {/* Pendências abertas */}
       {pendenciasAbertas.length > 0 ? (
@@ -134,13 +166,10 @@ export default async function ObraDetalhePage({
                 <div className="flex items-start gap-3">
                   <div
                     className={`shrink-0 h-8 w-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                      e.status === "concluida"
-                        ? "bg-emerald-500 text-white"
-                        : e.status === "travada"
-                        ? "bg-rose-500 text-white"
-                        : e.status === "em_andamento"
-                        ? "bg-amber-500 text-white"
-                        : "bg-navy-100 text-navy-600"
+                      e.status === "concluida" ? "bg-emerald-500 text-white" :
+                      e.status === "travada" ? "bg-rose-500 text-white" :
+                      e.status === "em_andamento" ? "bg-amber-500 text-white" :
+                      "bg-navy-100 text-navy-600"
                     }`}
                   >
                     {e.status === "concluida" ? "✓" : e.template.numero}
@@ -163,23 +192,17 @@ export default async function ObraDetalhePage({
                       <p className="text-xs text-navy-500 mt-1.5">{e.template.observacoes}</p>
                     ) : null}
 
-                    {/* Fotos */}
                     {e.fotos.length > 0 ? (
                       <div className="flex gap-2 mt-2 flex-wrap">
                         {e.fotos.map((f) => (
                           // eslint-disable-next-line @next/next/no-img-element
                           <a key={f.id} href={f.dados} target="_blank" rel="noreferrer">
-                            <img
-                              src={f.dados}
-                              alt="Foto da etapa"
-                              className="h-16 w-16 rounded-lg object-cover border border-navy-100"
-                            />
+                            <img src={f.dados} alt="Foto da etapa" className="h-16 w-16 rounded-lg object-cover border border-navy-100" />
                           </a>
                         ))}
                       </div>
                     ) : null}
 
-                    {/* Histórico de atualizações */}
                     {e.atualizacoes.length > 0 ? (
                       <ul className="mt-2 space-y-1 border-l-2 border-navy-100 pl-3">
                         {e.atualizacoes.slice(0, 4).map((a) => (
@@ -191,7 +214,6 @@ export default async function ObraDetalhePage({
                       </ul>
                     ) : null}
 
-                    {/* Form de atualização (só quem tem acesso ao setor) */}
                     {podeEditar ? (
                       <EtapaForm
                         etapaObraId={e.id}
